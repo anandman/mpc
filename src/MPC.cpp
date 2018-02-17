@@ -4,23 +4,6 @@
 
 using CppAD::AD;
 
-// Set the timestep length and duration
-size_t N = 10;
-double dt = 0.1;
-
-// reference velocity to start with
-// 1 mph -> 0.44704 m/s
-double ref_v = 90 * 0.44704;
-
-// cost coefficients to weight different things
-const double cteCoeff = 1;
-const double epsiCoeff = 1;
-const double vCoeff = 1;
-const double deltaCoeff = 1;
-const double aCoeff = 1;
-const double seqDeltaCoeff = 500;
-const double seqACoeff = 1;
-
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
 // when one variable starts and another ends to make our lives easier.
@@ -139,11 +122,16 @@ class FG_eval {
 //
 // MPC class definition implementation.
 //
-MPC::MPC() = default;
+MPC::MPC() {
+  steer_value = 0;
+  throttle_value = 0;
+  x_values.clear();
+  y_values.clear();
+}
 
 MPC::~MPC() = default;
 
-vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
+void MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   bool ok = true;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
@@ -213,6 +201,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     constraints_upperbound[i] = 0;
   }
 
+  // set for initial state
   constraints_lowerbound[x_start] = x;
   constraints_lowerbound[y_start] = y;
   constraints_lowerbound[psi_start] = psi;
@@ -263,16 +252,22 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   }
 
   // Cost
-  auto cost = solution.obj_value;
-  std::cout << "Cost " << cost << std::endl;
+  // auto cost = solution.obj_value;
+  // std::cout << "Cost " << cost << std::endl;
 
-  // Return the actuator values. The variables can be accessed with `solution.x[i]`.
+  // Save the actuator values. The variables can be accessed with `solution.x[i]`.
   // The Unity simulator only cares about steering angle (delta) & throttle (a).
   // We also want to send back the x & y values to draw the path on screen.
-  std::vector<double> actuator_values(solution.x[delta_start], solution.x[a_start]);
-  actuator_values.insert(actuator_values.end(), solution.x.data()+x_start+1, solution.x.data()+x_start+N-1);
-  actuator_values.insert(actuator_values.end(), solution.x.data()+y_start+1, solution.x.data()+y_start+N-1);
-  return actuator_values;
+  steer_value = solution.x[delta_start];
+  throttle_value = solution.x[a_start];
+  // cout << "STEER: " << steer_value << std::endl;
+  // cout << "THROTTLE: " << throttle_value << std::endl;
+  x_values.clear();
+  y_values.clear();
+  for (auto i=1; i < N; i++) {
+    x_values.push_back(solution.x[x_start+i]);
+    y_values.push_back(solution.x[y_start+i]);
+  }
 }
 
 // For converting back and forth between radians and degrees.
