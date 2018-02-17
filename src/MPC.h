@@ -32,13 +32,13 @@ const double ref_v = 90 * 0.44704;
 const double Lf = 2.67;
 
 // cost coefficients to weight different things
-const double cteCoeff = 2;
-const double epsiCoeff = 1;
-const double vCoeff = 0.1;
-const double deltaCoeff = 5000;
-const double aCoeff = 1;
-const double seqDeltaCoeff = 400;
-const double seqACoeff = 200;
+const double cteCoeff = 2;          // cost of cross-track error
+const double epsiCoeff = 1;         // cost of psi error
+const double vCoeff = 0.1;          // cost of speed changes
+const double deltaCoeff = 5000;     // cost of steering angle change
+const double aCoeff = 1;            // cost of throttle change
+const double seqDeltaCoeff = 400;   // cost of steering angle changes over time
+const double seqACoeff = 200;       // cost of throttle change over time
 
 using namespace std;
 
