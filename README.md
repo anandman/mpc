@@ -5,12 +5,35 @@ This is a sample implementation of a Model Predictive Controller (MPC) to maneuv
 ---
 
 ## MPC Background
+Model Predictive Control (MPC) is a smoother and ultimately, more realistic, control algorithm than a PID controller. It is also more complex as it uses actual motion control equations to model a path over a time horizon to follow a reference path. Imagine if you will a human driver trying to follow a ghost path in a video game. Here are the motion control equations used. We use a bicycle model which assumes two wheels with a turning radius of *Lf*. 
+
+<p align="center">
+<img src="images/motion_control_eqs.svg">
+</p>
 
 ## MPC Implementation
+This implementation of an MPC is in C++ using the Ipopt optimzer and CppAD automatic differentiation libraries to set the steering angle and throttle controls while driving a simulated vehicle around a race track following reference waypoints. In a real implementation, the reference waypoints might be derived using path planning algorithms.
+
+At each timestep, *t*, the vehicle's state (global position, heading, speed, steering angle, and throttle) and the next six waypoints are received by the controller. These waypoints are plotted as a yellow line for reference.
+
+First, we convert the waypoints from global to vehicle coordinate systems. We then fit a 3rd order polynomial to the waypoints for use as the reference driving path. We derive the cross-track error (CTE) & heading error (Eψ) from this polynomial. The final step before applying the MPC is to derive the current state of the vehicle after the latency in the simulator and MPC algorithms using the motion control equations.
+
+We then use the polynomial and estimated current state of the car to run the MPC to derive an optimized driving path over a 1.5s horizon (*N*=10 * *dt*=0.15s = 1.5s). The MPC uses a cost optimization function (see below) to find optimal solutions over the 1.5s for the model control equations. These first of these solutions are then used to steer and throttle the vehicle and the rest plotted as a green line.
+
+<p align="center">
+<img src="images/cost_function.svg">
+</p>
 
 ## MPC Tuning
+There are only a handful of coefficients to tune. The first is the timestep length (*N*) and duration (*dt*). N was chosen as a small value and dt to ensure the total time horizon was a little over 1s, in this case, 1.5s.
+
+The second set of parameters to tune are the cost coefficients (_w*_) from the cost function equation above. These were tuned by hand for this course, ensuring that any change to the steering angle, whether step-to-step or over time, incurs the highest cost. Note that a different course would require tuning again. Obviously, this is very inefficient and we would need to find a way to autotune these parameters in the future.  
 
 ## Results
+Here is the result of running the MPC on the sample track in the simulator. Click on the preview to see the full video.
+<p align="center">
+<a href="images/MPC_track.mp4"><img src="images/MPC_track.gif"></a>
+</p>
 
 ## Dependencies
 
